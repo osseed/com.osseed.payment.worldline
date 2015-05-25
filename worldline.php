@@ -74,7 +74,8 @@ class osseed_payment_worldline extends CRM_Core_Payment {
   }
  
   function doDirectPayment(&$params) {
-    CRM_Core_Error::fatal(ts('This function is not implemented'));
+    
+    //CRM_Core_Error::fatal(ts('This function is not implemented'));
   }
  
   /**
