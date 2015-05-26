@@ -175,6 +175,8 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       CRM_Core_Error::fatal($result->getMessage());
     }
 
+    dsm($request->getUrl());
+    dsm($request);
     if ($request->getResponseCode() != 200) {
       CRM_Core_Error::fatal(ts('Invalid response code received from Worldline Checkout: %1',
           array(1 => $request->getResponseCode())
