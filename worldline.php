@@ -145,7 +145,9 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     foreach ($atos_data_params as $key => $value) {
       $attached_data[] = "$key=$value";
     }
+    dsm($attached_data);
     $atos_params_string = implode('|', $attached_data);
+    dsm($atos_params_string);
     $atosParams = array(
       'Data' => base64_encode($atos_params_string),
       'Seal' => worldline_atos_generate_data_seal($atos_params, $this->_paymentProcessor['signature']),
@@ -156,9 +158,10 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     require_once 'HTTP/Request.php';
     $post_params = array(
       'method' => HTTP_REQUEST_METHOD_POST,
-      'allowRedirects' => FALSE,
+      'allowRedirects' => TRUE,
     );
     $payment_site_url = $this->_paymentProcessor['url_site'];
+    dsm($post_params);
     $request = new HTTP_Request($payment_site_url, $post_params);
     foreach ($atosParams as $key => $value) {
       $request->addPostData($key, $value);
@@ -169,6 +172,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     }
 
     dsm($request->getUrl());
+    dsm($request);
     if ($request->getResponseCode() != 200) {
       CRM_Core_Error::fatal(ts('Invalid response code received from Worldline Checkout: %1',
           array(1 => $request->getResponseCode())
@@ -248,6 +252,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
  *   return the hashed value.
  */
 function worldline_atos_generate_data_seal($data, $secret_key) {
+  $secret_key = trim($secret_key);
   return hash('sha256', $data . $secret_key);
 }
 
