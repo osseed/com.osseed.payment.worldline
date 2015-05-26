@@ -89,6 +89,12 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     // Build our query string;
     $query_string = '';
 
+    $component = strtolower($component);
+    $config = CRM_Core_Config::singleton();
+    if ($component != 'contribute' && $component != 'event') {
+      CRM_Core_Error::fatal(ts('Component is invalid'));
+    }
+
     if ($component == "event") {
       $returnURL = CRM_Utils_System::url('civicrm/event/register',
         "_qf_ThankYou_display=1&qfKey={$params['qfKey']}",
@@ -131,6 +137,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'automaticResponseUrl' => $returnURL,
       'customerId' => $params['contactID'],
       'customerIpAddress' => ip_address(),
+      'customerLanguage' => 'en',
       'orderId' => $params['invoiceID'],
       'transactionOrigin' => 'CIVICRMPAYMENT',
       'captureDay' => 0,
@@ -158,7 +165,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     require_once 'HTTP/Request.php';
     $post_params = array(
       'method' => HTTP_REQUEST_METHOD_POST,
-      'allowRedirects' => TRUE,
+      'allowRedirects' => FALSE,
     );
     $payment_site_url = $this->_paymentProcessor['url_site'];
     dsm($post_params);
