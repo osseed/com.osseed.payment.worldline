@@ -88,12 +88,47 @@ class osseed_payment_worldline extends CRM_Core_Payment {
   function doTransferCheckout( &$params, $component ) {
     // Build our query string;
     $query_string = '';
-    dsm($this->_paymentProcessor);
+
+    if ($component == "event") {
+      $returnURL = CRM_Utils_System::url('civicrm/event/register',
+        "_qf_ThankYou_display=1&qfKey={$params['qfKey']}",
+        TRUE, NULL, FALSE
+      );
+    }
+    elseif ($component == "contribute") {
+      $returnURL = CRM_Utils_System::url('civicrm/contribute/transact',
+        "_qf_ThankYou_display=1&qfKey={$params['qfKey']}",
+        TRUE, NULL, FALSE
+      );
+    }
+
+    $currency_code = array(
+      'EUR' => '978',
+      'USD' => '840',
+      'CHF' => '756',
+      'GBP' => '826',
+      'CAD' => '124',
+      'JPY' => '392',
+      'MXP' => '484',
+      'TRL' => '792',
+      'AUD' => '036',
+      'NZD' => '554',
+      'NOK' => '578',
+      'BRC' => '986',
+      'ARP' => '032',
+      'KHR' => '116',
+      'TWD' => '901',
+      'SEK' => '752',
+      'DKK' => '208',
+      'KRW' => '410',
+      'SGD' => '702',
+    );
+
     $atos_data_params = array(
       'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
-      'normalReturnUrl' => '',
-      'automaticResponseUrl' => '',
+      'normalReturnUrl' => $returnURL,
+      'automaticResponseUrl' => $returnURL,
       'customerId' => $params['contactID'],
       'customerIpAddress' => ip_address(),
       'orderId' => $params['invoiceID'],
@@ -102,7 +137,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'captureMode' => 'AUTHOR_CAPTURE',
       'transactionReference' => $params['invoiceID'],
       'amount' => $params['amount'],
-      'currencyCode' => $params['currencyID'],
+      'currencyCode' => $currency_code[$params['currencyID']],
     );
     dsm($atos_data_params);
     $attached_data = array();
@@ -111,23 +146,20 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       $attached_data[] = "$key=$value";
     }
     $atos_params_string = implode('|', $attached_data);
-     dsm($atos_params_string);
     $atosParams = array(
       'Data' => base64_encode($atos_params_string),
       'Seal' => worldline_atos_generate_data_seal($atos_params, $this->_paymentProcessor['signature']),
       'Encode' => 'base64',
       'InterfaceVersion' => 'HP_2.3',
     );
-    dsm($atosParams);
     // Do a post request with required params
     require_once 'HTTP/Request.php';
     $post_params = array(
       'method' => HTTP_REQUEST_METHOD_POST,
-      'allowRedirects' => TRUE,
+      'allowRedirects' => FALSE,
     );
     $payment_site_url = $this->_paymentProcessor['url_site'];
     $request = new HTTP_Request($payment_site_url, $post_params);
-    dsm($request);
     foreach ($atosParams as $key => $value) {
       $request->addPostData($key, $value);
     }
@@ -136,6 +168,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       CRM_Core_Error::fatal($result->getMessage());
     }
 
+    dsm($request->getUrl());
     if ($request->getResponseCode() != 200) {
       CRM_Core_Error::fatal(ts('Invalid response code received from Worldline Checkout: %1',
           array(1 => $request->getResponseCode())
