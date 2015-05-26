@@ -1,8 +1,14 @@
 <?php
- 
+
+/**
+ * CiviCRM Payment Processor for Worldline atios payment.
+ *
+ */
+
 require_once 'CRM/Core/Payment.php';
  
 class osseed_payment_worldline extends CRM_Core_Payment {
+
   /**
    * We only need one instance of this object. So we use the singleton
    * pattern and cache the instance in this variable
@@ -19,6 +25,13 @@ class osseed_payment_worldline extends CRM_Core_Payment {
    * @static
    */
   static protected $_mode = null;
+
+  /**
+   * Payment Type Processor Name
+   *
+   * @var string
+   */
+  static protected $_processorName = null;
  
   /**
    * Constructor
@@ -73,8 +86,14 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     }
   }
  
-  function doDirectPayment(&$params) {
-    //CRM_Core_Error::fatal(ts('This function is not implemented'));
+  /**
+   * This function is not implemented, as long as this payment
+   * procesor is notify mode only.
+   *
+   * @param type $params
+   */
+  function doDirectPayment( &$params ) {
+    CRM_Core_Error::fatal( ts( "This function is not implemented" ) );
   }
  
   /**
@@ -129,7 +148,6 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'KRW' => '410',
       'SGD' => '702',
     );
-
     $atos_data_params = array(
       'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
@@ -174,7 +192,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     if (PEAR::isError($result)) {
       CRM_Core_Error::fatal($result->getMessage());
     }
-    
+
     if ($request->getResponseCode() != 200) {
       CRM_Core_Error::fatal(ts('Invalid response code received from Worldline Checkout: %1',
           array(1 => $request->getResponseCode())
@@ -213,7 +231,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     $module = self::retrieve('md', 'String', 'GET', false);
     $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
     $response = array();
-
+    dsm($_POST);
     $response = worldline_atos_parse_response($_POST['Data']);
     $transaction_id = explode('T', $response['transactionReference']);
     dsm($response);

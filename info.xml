@@ -25,8 +25,6 @@
    <urlSiteDefault>https://payment-webinit.sips-atos.com/paymentInit</urlSiteDefault>
    <urlSiteTestDefault>https://payment-webinit.simu.sips-atos.com/paymentInit</urlSiteTestDefault>
    <billingMode>notify</billingMode>
-   <urlButtonDefault>https://payment-webinit.sips-atos.com/paymentInit</urlButtonDefault>
-   <urlButtonTestDefault>https://payment-webinit.simu.sips-atos.com/paymentInit</urlButtonTestDefault>
    <paymentType>1</paymentType>
    <isRecur>0</isRecur>
   </typeInfo>
