@@ -218,27 +218,26 @@ function worldline_atos_generate_data_seal($data, $secret_key) {
   return hash('sha256', $data . $secret_key);
 }
 
+/**
+ * Converts an encoded response string into an array of data.
+ *
+ * @param string $data
+ *   A string to decode and to convert into an array.
+ *
+ * @return array|bool
+ *   Return FALSE if the response data wasn't valid.
+ */
+function worldline_atos_parse_response($data) {
+  if (empty($data)) {
+    return FALSE;
+  }
+  // Decode encoded data (base64URL)
+  $data = base64_decode(strtr($data, '-_,', '+/='));
+  $data = explode('|', $data);
+  foreach ($data as $value) {
+    list($key, $param) = explode('=', $value);
+    $response[$key] = (string) $param;
+  }
 
--/**
-- * Converts an encoded response string into an array of data.
-- *
-- * @param string $data
-- *   A string to decode and to convert into an array.
-- *
-- * @return array|bool
-- *   Return FALSE if the response data wasn't valid.
-- */
--function worldline_atos_parse_response($data) {
--  if (empty($data)) {
--    return FALSE;
--  }
--  // Decode encoded data (base64URL)
--  $data = base64_decode(strtr($data, '-_,', '+/='));
--  $data = explode('|', $data);
--  foreach ($data as $value) {
--    list($key, $param) = explode('=', $value);
--    $response[$key] = (string) $param;
--  }
--
--  return $response;
--}
+  return $response;
+}
