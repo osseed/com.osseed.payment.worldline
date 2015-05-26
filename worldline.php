@@ -133,7 +133,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     if (PEAR::isError($result)) {
       CRM_Core_Error::fatal($result->getMessage());
     }
-    //CRM_Utils_System::redirect($request->getUrl());
+    CRM_Utils_System::redirect($request->getUrl());
     CRM_Utils_System::civiExit();
   }
 }
