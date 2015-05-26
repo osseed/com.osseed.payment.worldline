@@ -74,13 +74,11 @@ class osseed_payment_worldline extends CRM_Core_Payment {
   }
  
   function doDirectPayment(&$params) {
-    
     //CRM_Core_Error::fatal(ts('This function is not implemented'));
   }
  
   /**
-   * Sets appropriate parameters for checking out to UCM Payment Collection
-   *
+   * Sets appropriate parameters for checking out to Worldline payment
    * @param array $params  name value pair of contribution datat
    *
    * @return void
@@ -88,6 +86,38 @@ class osseed_payment_worldline extends CRM_Core_Payment {
    *
    */
   function doTransferCheckout( &$params, $component ) {
+    // Build our query string;
+    $query_string = '';
+    foreach ($UCMPaymentCollectionParams as $name => $value) {
+      $query_string .= $name . '=' . $value . '&';
+    }
  
+    // Remove extra &
+    $query_string = rtrim($query_string, '&');
+
+    // Atos payment url
+    $payment_site_url = $this->_paymentProcessor['url_site'];
+
+    // Redirect the user to the payment url.
+    CRM_Utils_System::redirect($payment_site_url . '?' . $query_string);
+ 
+    exit();
+  }
+
+  /**
+   * Returns a hashed value of data.
+   *
+   * This is used to generate a seal for all requests to ATOS payment servers.
+   *
+   * @param string $data
+   *   Data to convert.
+   * @param array $secret_key
+   *   The secret key of atos wordline account.
+   *
+   * @return string
+   *   return the hashed value.
+   */
+  function worldline_atos_generate_data_seal($data, $secret_key) {
+    return hash('sha256', $data . $secret_key);
   }
 }
