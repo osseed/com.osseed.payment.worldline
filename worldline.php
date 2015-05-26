@@ -88,8 +88,9 @@ class osseed_payment_worldline extends CRM_Core_Payment {
   function doTransferCheckout( &$params, $component ) {
     // Build our query string;
     $query_string = '';
+    dsm($this->_paymentProcessor);
     $atos_data_params = array(
-      'merchantId' => $this->_paymentProcessor['url_site'],
+      'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
       'normalReturnUrl' => '',
       'automaticResponseUrl' => '',
@@ -103,29 +104,30 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'amount' => $params['amount'],
       'currencyCode' => $params['currencyID'],
     );
+    dsm($atos_data_params);
     $attached_data = array();
     // Converts the array into a string of key=value.
     foreach ($atos_data_params as $key => $value) {
       $attached_data[] = "$key=$value";
     }
     $atos_params_string = implode('|', $attached_data);
-
+     dsm($atos_params_string);
     $atosParams = array(
       'Data' => base64_encode($atos_params_string),
       'Seal' => worldline_atos_generate_data_seal($atos_params, $this->_paymentProcessor['signature']),
       'Encode' => 'base64',
       'InterfaceVersion' => 'HP_2.3',
     );
-
+    dsm($atosParams);
+    // Do a post request with required params
     require_once 'HTTP/Request.php';
     $post_params = array(
       'method' => HTTP_REQUEST_METHOD_POST,
       'allowRedirects' => TRUE,
     );
-
-    // Atos payment url
     $payment_site_url = $this->_paymentProcessor['url_site'];
     $request = new HTTP_Request($payment_site_url, $post_params);
+    dsm($request);
     foreach ($atosParams as $key => $value) {
       $request->addPostData($key, $value);
     }
@@ -216,26 +218,27 @@ function worldline_atos_generate_data_seal($data, $secret_key) {
   return hash('sha256', $data . $secret_key);
 }
 
-/**
- * Converts an encoded response string into an array of data.
- *
- * @param string $data
- *   A string to decode and to convert into an array.
- *
- * @return array|bool
- *   Return FALSE if the response data wasn't valid.
- */
-function worldline_atos_parse_response($data) {
-  if (empty($data)) {
-    return FALSE;
-  }
-  // Decode encoded data (base64URL)
-  $data = base64_decode(strtr($data, '-_,', '+/='));
-  $data = explode('|', $data);
-  foreach ($data as $value) {
-    list($key, $param) = explode('=', $value);
-    $response[$key] = (string) $param;
-  }
 
-  return $response;
-}
+-/**
+- * Converts an encoded response string into an array of data.
+- *
+- * @param string $data
+- *   A string to decode and to convert into an array.
+- *
+- * @return array|bool
+- *   Return FALSE if the response data wasn't valid.
+- */
+-function worldline_atos_parse_response($data) {
+-  if (empty($data)) {
+-    return FALSE;
+-  }
+-  // Decode encoded data (base64URL)
+-  $data = base64_decode(strtr($data, '-_,', '+/='));
+-  $data = explode('|', $data);
+-  foreach ($data as $value) {
+-    list($key, $param) = explode('=', $value);
+-    $response[$key] = (string) $param;
+-  }
+-
+-  return $response;
+-}
