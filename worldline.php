@@ -88,7 +88,18 @@ class osseed_payment_worldline extends CRM_Core_Payment {
   function doTransferCheckout( &$params, $component ) {
     // Build our query string;
     $query_string = '';
-    $atos_params = array();
+    $atos_params = array(
+      'merchantId' => $this->_paymentProcessor['url_site'],
+      'keyVersion' => 1,
+      'normalReturnUrl' => '',
+      'automaticResponseUrl' => '',
+      'customerId' => $params['contactID'],
+      'customerIpAddress' => ip_address(),
+      'orderId' => $params['invoiceID'],
+      'transactionOrigin' => 'CIVICRMPAYMENT',
+    );
+
+
     foreach ($atos_params as $name => $value) {
       $query_string .= $name . '=' . $value . '&';
     }
