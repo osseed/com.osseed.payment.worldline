@@ -148,11 +148,12 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'KRW' => '410',
       'SGD' => '702',
     );
+    $respons_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
     $atos_data_params = array(
       'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
       'normalReturnUrl' => $returnURL,
-      'automaticResponseUrl' => $returnURL,
+      'automaticResponseUrl' => $respons_url,
       'customerId' => $params['contactID'],
       'customerIpAddress' => ip_address(),
       'customerLanguage' => 'en',
@@ -203,10 +204,6 @@ class osseed_payment_worldline extends CRM_Core_Payment {
   }
 
   protected function isValidResponse($params){
-    return true;
-  }
-
-  public function handlePaymentNotification() {
     $responses = array(
       '00' => 'Transaction success, authorization accepted.',
       '02' => 'Please phone the bank because the authorization limit on the card has been exceeded',
@@ -228,6 +225,13 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       '97' => 'Request time-out; transaction refused',
       '99' => 'Payment page temporarily unavailable',
     );
+
+    // @todo Check for the resposne status codes and pass the validation accordingly.
+    
+    return true;
+  }
+
+  public function handlePaymentNotification() {
     $module = self::retrieve('md', 'String', 'GET', false);
     $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
     $response = array();
