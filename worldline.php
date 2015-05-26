@@ -88,7 +88,8 @@ class osseed_payment_worldline extends CRM_Core_Payment {
   function doTransferCheckout( &$params, $component ) {
     // Build our query string;
     $query_string = '';
-    foreach ($UCMPaymentCollectionParams as $name => $value) {
+    $atos_params = array();
+    foreach ($atos_params as $name => $value) {
       $query_string .= $name . '=' . $value . '&';
     }
  
