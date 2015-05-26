@@ -133,8 +133,69 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     if (PEAR::isError($result)) {
       CRM_Core_Error::fatal($result->getMessage());
     }
+
+    if ($request->getResponseCode() != 200) {
+      CRM_Core_Error::fatal(ts('Invalid response code received from Worldline Checkout: %1',
+          array(1 => $request->getResponseCode())
+        ));
+    }
     CRM_Utils_System::redirect($request->getUrl());
     CRM_Utils_System::civiExit();
+  }
+
+  protected function isValidResponse($params){
+    return true;
+  }
+
+  public function handlePaymentNotification() {
+    $responses = array(
+      '00' => 'Transaction success, authorization accepted.',
+      '02' => 'Please phone the bank because the authorization limit on the card has been exceeded',
+      '03' => 'Invalid merchant contract',
+      '05' => 'Do not honor, authorization refused',
+      '12' => 'Invalid transaction, check the parameters sent in the request.',
+      '14' => 'Invalid card number or invalid Card Security Code or Card (for MasterCard) or invalid Card Verification Value (for Visa)',
+      '17' => 'Cancellation of payment by the end user',
+      '24' => 'Invalid status.',
+      '25' => 'Transaction not found in database',
+      '30' => 'Invalid format',
+      '34' => 'Fraud suspicion',
+      '40' => 'Operation not allowed to this merchant',
+      '60' => 'Pending transaction',
+      '63' => 'Security breach detected, transaction stopped.',
+      '75' => 'The number of attempts to enter the card number has been exceeded (Three tries exhausted)',
+      '90' => 'Acquirer server temporarily unavailable',
+      '94' => 'Duplicate transaction. (transaction reference already reserved)',
+      '97' => 'Request time-out; transaction refused',
+      '99' => 'Payment page temporarily unavailable',
+    );
+    $module = self::retrieve('md', 'String', 'GET', false);
+    $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
+    $response = array();
+
+    $response = worldline_atos_parse_response($_POST['Data']);
+    $transaction_id = explode('T', $response['transactionReference']);
+    dsm($response);
+
+    if($this->isValidResponse($response)){
+      switch ($module) {
+        case 'contribute':
+          if ($transaction_id) {
+            $query = "UPDATE civicrm_contribution SET trxn_id='" .$transaction_id . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+            CRM_Core_DAO::executeQuery($query);
+          }
+          break;
+        case 'event':
+          if ($transaction_id) {
+            $query = "UPDATE civicrm_contribution SET trxn_id='" . $transaction_id . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+            CRM_Core_DAO::executeQuery($query);
+          }
+          break;
+        default:
+          require_once 'CRM/Core/Error.php';
+          CRM_Core_Error::debug_log_message("Could not get module name from request url");
+      }
+    }
   }
 }
 
@@ -153,4 +214,28 @@ class osseed_payment_worldline extends CRM_Core_Payment {
  */
 function worldline_atos_generate_data_seal($data, $secret_key) {
   return hash('sha256', $data . $secret_key);
+}
+
+/**
+ * Converts an encoded response string into an array of data.
+ *
+ * @param string $data
+ *   A string to decode and to convert into an array.
+ *
+ * @return array|bool
+ *   Return FALSE if the response data wasn't valid.
+ */
+function worldline_atos_parse_response($data) {
+  if (empty($data)) {
+    return FALSE;
+  }
+  // Decode encoded data (base64URL)
+  $data = base64_decode(strtr($data, '-_,', '+/='));
+  $data = explode('|', $data);
+  foreach ($data as $value) {
+    list($key, $param) = explode('=', $value);
+    $response[$key] = (string) $param;
+  }
+
+  return $response;
 }
