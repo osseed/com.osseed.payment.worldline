@@ -148,12 +148,12 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'KRW' => '410',
       'SGD' => '702',
     );
-    $respons_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
+    $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
     $atos_data_params = array(
       'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
       'normalReturnUrl' => $returnURL,
-      'automaticResponseUrl' => $respons_url,
+      'automaticResponseUrl' => $response_url,
       'customerId' => $params['contactID'],
       'customerIpAddress' => ip_address(),
       'customerLanguage' => 'en',
