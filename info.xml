@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
  <extension key="osseed.payment.worldline" type="payment">
   <file>worldline</file>
-  <name>Worldline Atos Payment Processor</name>
+  <name>Worldline</name>
   <description>Payment processor for worldline payment.</description>
   <urls>
     <url desc="Main Extension Page">http://osseed.com/</url>
