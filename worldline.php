@@ -257,10 +257,10 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     $module = self::retrieve('md', 'String', 'GET', false);
     $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
     $response = array();
-    dsm($_POST);
+    CRM_Core_Error::debug_log_message($_POST, TRUE);
     $response = worldline_atos_parse_response($_POST['Data']);
     $transaction_id = explode('T', $response['transactionReference']);
-    dsm($response);
+    CRM_Core_Error::debug_log_message( $message, TRUE);
 
     if($this->isValidResponse($response)){
       switch ($module) {
