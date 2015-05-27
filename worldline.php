@@ -206,6 +206,29 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     return true;
   }
 
+  /**
+   * @param string $name of variable to return
+   * @param string $type data type
+   *   - String
+   *   - Integer
+   * @param string $location - deprecated
+   * @param boolean $abort abort if empty
+   *
+   * @throws CRM_Core_Exception
+   * @return Ambigous <mixed, NULL, value, unknown, array, number>
+   */
+  function retrieve($name, $type, $location = 'POST', $abort = TRUE) {
+    $value = CRM_Utils_Type::validate(
+      CRM_Utils_Array::value($name, $this->_inputParameters),
+      $type,
+      FALSE
+    );
+    if ($abort && $value === NULL) {
+      throw new CRM_Core_Exception("Could not find an entry for $name in $location");
+    }
+    return $value;
+  }
+  
   public function handlePaymentNotification() {
     $responses = array(
       '00' => 'Transaction success, authorization accepted.',
