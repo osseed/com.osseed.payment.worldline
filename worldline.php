@@ -161,7 +161,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'transactionOrigin' => 'CIVICRMPAYMENT',
       'captureDay' => 0,
       'captureMode' => 'AUTHOR_CAPTURE',
-      'transactionReference' => $params['invoiceID'],
+      'transactionReference' => self::formatAmount($params["contributionID"], 12),
       'amount' => $params['amount'],
       'currencyCode' => $currency_code[$params['currencyID']],
     );
@@ -174,7 +174,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     $atos_params_string_data = base64_encode($atos_params_string);
     $atosParams = array(
       'Data' => $atos_params_string_data,
-      'Seal' => worldline_atos_generate_data_seal($atos_params_string_data, $this->_paymentProcessor['signature']),
+      'Seal' => self::worldline_atos_generate_data_seal($atos_params_string_data, $this->_paymentProcessor['signature']),
       'Encode' => 'base64',
       'InterfaceVersion' => 'HP_2.3',
     );
@@ -230,49 +230,77 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     return true;
   }
 
-  /**
-   * @param string $name of variable to return
-   * @param string $type data type
-   *   - String
-   *   - Integer
-   * @param string $location - deprecated
-   * @param boolean $abort abort if empty
-   *
-   * @throws CRM_Core_Exception
-   * @return Ambigous <mixed, NULL, value, unknown, array, number>
-   */
-  function retrieve($name, $type, $location = 'POST', $abort = TRUE) {
-    $value = CRM_Utils_Type::validate(
-      CRM_Utils_Array::value($name, $this->_inputParameters),
-      $type,
-      FALSE
-    );
-    if ($abort && $value === NULL) {
-      throw new CRM_Core_Exception("Could not find an entry for $name in $location");
-    }
-    return $value;
+  static function formatAmount($amount, $size, $pad = 0){
+    $amount_str = preg_replace('/[\.,]/', '', strval($amount));
+    $amount_str = str_pad($amount_str, $size, $pad, STR_PAD_LEFT);
+    return $amount_str;
   }
   
+  static function trimAmount($amount, $pad = '0'){
+    return ltrim(trim($amount), $pad);
+  }
+
+  /**
+   * Returns a hashed value of data.
+   *
+   * This is used to generate a seal for all requests to ATOS payment servers.
+   *
+   * @param string $data
+   *   Data to convert.
+   * @param array $secret_key
+   *   The secret key of atos wordline account.
+   *
+   * @return string
+   *   return the hashed value.
+   */
+  static function worldline_atos_generate_data_seal($data, $secret_key) {
+    $secret_key = trim($secret_key);
+    return hash('sha256', $data . $secret_key);
+  }
+
+  /**
+   * Converts an encoded response string into an array of data.
+   *
+   * @param string $data
+   *   A string to decode and to convert into an array.
+   *
+   * @return array|bool
+   *   Return FALSE if the response data wasn't valid.
+   */
+  static function worldline_atos_parse_response($data) {
+    if (empty($data)) {
+      return FALSE;
+    }
+    // Decode encoded data (base64URL)
+    $data = base64_decode(strtr($data, '-_,', '+/='));
+    $data = explode('|', $data);
+    foreach ($data as $value) {
+      list($key, $param) = explode('=', $value);
+      $response[$key] = (string) $param;
+    }
+
+    return $response;
+  }
+
   public function handlePaymentNotification() {
-    $module = self::retrieve('md', 'String', 'GET', false);
-    $qfKey = self::retrieve('qfKey', 'String', 'GET', false);
+    $module = $_GET['md'];
+    $qfKey = $_GET['qfKey'];
     $response = array();
-    CRM_Core_Error::debug_log_message($_POST, TRUE);
-    $response = worldline_atos_parse_response($_POST['Data']);
-    $transaction_id = explode('T', $response['transactionReference']);
-    CRM_Core_Error::debug_log_message( $message, TRUE);
+    $response = self::worldline_atos_parse_response($_POST['Data']);
+    $transaction_id = $response['transactionReference'];
+    watchdog('Worldline Data', '<pre>' . print_r($transaction_id, TRUE) . '</pre>');
 
     if($this->isValidResponse($response)){
       switch ($module) {
         case 'contribute':
           if ($transaction_id) {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" .$transaction_id . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+            $query = "UPDATE civicrm_contribution SET trxn_id='" .$transaction_id . "', contribution_status_id=1 where id='" . self::trimAmount($response['transactionReference']) . "'";
             CRM_Core_DAO::executeQuery($query);
           }
           break;
         case 'event':
           if ($transaction_id) {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" . $transaction_id . "', contribution_status_id=1 where id='" . self::trimAmount($response['Ds_Order']) . "'";
+            $query = "UPDATE civicrm_contribution SET trxn_id='" . $transaction_id . "', contribution_status_id=1 where id='" . self::trimAmount($response['transactionReference']) . "'";
             CRM_Core_DAO::executeQuery($query);
           }
           break;
@@ -282,46 +310,4 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       }
     }
   }
-}
-
-/**
- * Returns a hashed value of data.
- *
- * This is used to generate a seal for all requests to ATOS payment servers.
- *
- * @param string $data
- *   Data to convert.
- * @param array $secret_key
- *   The secret key of atos wordline account.
- *
- * @return string
- *   return the hashed value.
- */
-function worldline_atos_generate_data_seal($data, $secret_key) {
-  $secret_key = trim($secret_key);
-  return hash('sha256', $data . $secret_key);
-}
-
-/**
- * Converts an encoded response string into an array of data.
- *
- * @param string $data
- *   A string to decode and to convert into an array.
- *
- * @return array|bool
- *   Return FALSE if the response data wasn't valid.
- */
-function worldline_atos_parse_response($data) {
-  if (empty($data)) {
-    return FALSE;
-  }
-  // Decode encoded data (base64URL)
-  $data = base64_decode(strtr($data, '-_,', '+/='));
-  $data = explode('|', $data);
-  foreach ($data as $value) {
-    list($key, $param) = explode('=', $value);
-    $response[$key] = (string) $param;
-  }
-
-  return $response;
 }
