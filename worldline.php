@@ -226,7 +226,11 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       '99' => 'Payment page temporarily unavailable',
     );
     // @todo Check for the resposne status codes and pass the validation accordingly.
-    
+    if($params['responseCode'] != '00') {
+      CRM_Core_Error::debug_log_message("Wrodlline Response : " . $responses[$params['responseCode']]);
+      return false;
+    }
+
     return true;
   }
 
@@ -288,7 +292,6 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     $response = array();
     $response = self::worldline_atos_parse_response($_POST['Data']);
     $transaction_id = $response['transactionReference'];
-    watchdog('Worldline Data', '<pre>' . print_r($transaction_id, TRUE) . '</pre>');
 
     if($this->isValidResponse($response)){
       switch ($module) {
