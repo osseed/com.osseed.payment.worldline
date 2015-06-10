@@ -1,7 +1,7 @@
 <?php
 
 /**
- * CiviCRM Payment Processor for Worldline atios payment.
+ * CiviCRM Payment Processor for Worldline atos payment.
  *
  */
 
@@ -98,7 +98,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
  
   /**
    * Sets appropriate parameters for checking out to Worldline payment
-   * @param array $params  name value pair of contribution datat
+   * @param array $params  name value pair of contribution data
    *
    * @return void
    * @access public
@@ -149,6 +149,8 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'SGD' => '702',
     );
     $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
+    
+    //Build the atos payment parameters.
     $atos_data_params = array(
       'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
@@ -230,7 +232,6 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       CRM_Core_Error::debug_log_message("Wrodlline Response : " . $responses[$params['responseCode']]);
       return false;
     }
-
     return true;
   }
 
@@ -286,6 +287,9 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     return $response;
   }
 
+  /**
+  * Implement a handlePaymentNotification.
+  */
   public function handlePaymentNotification() {
     $module = $_GET['md'];
     $qfKey = $_GET['qfKey'];
