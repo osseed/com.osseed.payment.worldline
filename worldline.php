@@ -119,11 +119,19 @@ class osseed_payment_worldline extends CRM_Core_Payment {
         "_qf_ThankYou_display=1&qfKey={$params['qfKey']}",
         TRUE, NULL, FALSE
       );
+      $cancelURL = CRM_Utils_System::url('civicrm/event/register',
+        "_qf_Confirm_display=true&qfKey={$params['qfKey']}",
+        FALSE, NULL, FALSE
+      );
     }
     elseif ($component == "contribute") {
       $returnURL = CRM_Utils_System::url('civicrm/contribute/transact',
         "_qf_ThankYou_display=1&qfKey={$params['qfKey']}",
         TRUE, NULL, FALSE
+      );
+      $cancelURL = CRM_Utils_System::url('civicrm/contribute/transact',
+        "_qf_Confirm_display=true&qfKey={$params['qfKey']}",
+        FALSE, NULL, FALSE
       );
     }
 
@@ -166,6 +174,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'transactionReference' => self::formatAmount($params["contributionID"], 12),
       'amount' => $params['amount'],
       'currencyCode' => $currency_code[$params['currencyID']],
+      'cancel_return_url' => $cancelURL,
     );
     $attached_data = array();
     // Converts the array into a string of key=value.
