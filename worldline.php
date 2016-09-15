@@ -1,14 +1,8 @@
 <?php
-
-/**
- * CiviCRM Payment Processor for Worldline atos payment.
- *
- */
-
+ 
 require_once 'CRM/Core/Payment.php';
-
-class osseed_payment_worldline extends CRM_Core_Payment {
-
+ 
+class com_osseed_payment_worldline extends CRM_Core_Payment {
   /**
    * We only need one instance of this object. So we use the singleton
    * pattern and cache the instance in this variable
@@ -16,8 +10,16 @@ class osseed_payment_worldline extends CRM_Core_Payment {
    * @var object
    * @static
    */
-  static private $_singleton = null;
-
+  static private $_singleton;
+ 
+  /**
+   * mode of operation: live or test
+   *
+   * @var object
+   * @static
+   */
+  //static protected $_mode;
+ 
   /**
    * Constructor
    *
@@ -28,9 +30,26 @@ class osseed_payment_worldline extends CRM_Core_Payment {
   function __construct( $mode, &$paymentProcessor ) {
     $this->_mode             = $mode;
     $this->_paymentProcessor = $paymentProcessor;
-    $this->_processorName    = ts('Worldline atos');
+    $this->_processorName    = ts('worldline Payment');
   }
-
+ 
+  /**
+   * singleton function used to manage this object
+   *
+   * @param string $mode the mode of operation: live or test
+   *
+   * @return object
+   * @static
+   *
+   */
+  // static function &singleton( $mode, &$paymentProcessor ) {
+  //     $processorName = $paymentProcessor['name'];
+  //     if (self::$_singleton[$processorName] === null ) {
+  //         self::$_singleton[$processorName] = new com_osseed_payment_worldline( $mode, $paymentProcessor );
+  //     }
+  //     return self::$_singleton[$processorName];
+  // }
+ 
   /**
    * This function checks to see if we have the right config values
    *
@@ -39,13 +58,13 @@ class osseed_payment_worldline extends CRM_Core_Payment {
    */
   function checkConfig( ) {
     $config = CRM_Core_Config::singleton();
-
+ 
     $error = array();
-
+ 
     if (empty($this->_paymentProcessor['user_name'])) {
       $error[] = ts('The "Merchant ID" is not set in the Administer CiviCRM Payment Processor.');
     }
-
+ 
     if (!empty($error)) {
       return implode('<p>', $error);
     }
@@ -53,27 +72,14 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       return NULL;
     }
   }
-
-  static function &singleton( $mode, &$paymentProcessor, &$paymentForm = NULL, $force = false) {
-    $processorName = $paymentProcessor['name'];
-    if (self::$_singleton[$processorName] === null ) {
-      self::$_singleton[$processorName] = new osseed_payment_worldline( $mode, $paymentProcessor );
-    }
-    return self::$_singleton[$processorName];
+ 
+  function doDirectPayment(&$params) {
+    CRM_Core_Error::fatal(ts('This function is not implemented'));
   }
-
+ 
   /**
-   * This function is not implemented, as long as this payment
-   * procesor is notify mode only.
+   * Sets appropriate parameters for checking out to worldline Payment
    *
-   * @param type $params
-   */
-  function doDirectPayment( &$params ) {
-    CRM_Core_Error::fatal( ts( "This function is not implemented" ) );
-  }
-
-  /**
-   * Sets appropriate parameters for checking out to Worldline payment
    * @param array $params  name value pair of contribution data
    *
    * @return void
@@ -111,8 +117,9 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'KRW' => '410',
       'SGD' => '702',
     );
-    $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=Worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
+    $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
     //Build the atos payment parameters.
+    $transactionReference = $params["eventID"] .'-' . $params["contributionID"] .'-' . $params["participantID"] .'-' . $params["contributionTypeID"] .'-' . $params["membershipID"];
     $atos_data_params = array(
       'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
@@ -126,10 +133,14 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       'captureDay' => 0,
       'captureMode' => 'AUTHOR_CAPTURE',
       'transactionReference' => self::formatAmount($params["contributionID"], 12),
+      'transactionOrigin' => $transactionReference,
       'amount' => $params['amount'] * 100,
       'currencyCode' => $currency_code[$params['currencyID']],
     );
     $attached_data = array();
+    // Allow further manipulation of the arguments via custom hooks ..
+    CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $worldline_payment_params);
+
     // Converts the array into a string of key=value.
     foreach ($atos_data_params as $key => $value) {
       $attached_data[] = "$key=$value";
@@ -155,6 +166,7 @@ class osseed_payment_worldline extends CRM_Core_Payment {
       $request->addPostData($key, $value);
     }
     $result = $request->sendRequest();
+
     if (PEAR::isError($result)) {
       CRM_Core_Error::fatal($result->getMessage());
     }
@@ -168,63 +180,22 @@ class osseed_payment_worldline extends CRM_Core_Payment {
     CRM_Utils_System::civiExit();
   }
 
-  protected function isValidResponse($params){
-    $responses = array(
-      '00' => 'Transaction success, authorization accepted.',
-      '02' => 'Please phone the bank because the authorization limit on the card has been exceeded',
-      '03' => 'Invalid merchant contract',
-      '05' => 'Do not honor, authorization refused',
-      '12' => 'Invalid transaction, check the parameters sent in the request.',
-      '14' => 'Invalid card number or invalid Card Security Code or Card (for MasterCard) or invalid Card Verification Value (for Visa)',
-      '17' => 'Cancellation of payment by the end user',
-      '24' => 'Invalid status.',
-      '25' => 'Transaction not found in database',
-      '30' => 'Invalid format',
-      '34' => 'Fraud suspicion',
-      '40' => 'Operation not allowed to this merchant',
-      '60' => 'Pending transaction',
-      '63' => 'Security breach detected, transaction stopped.',
-      '75' => 'The number of attempts to enter the card number has been exceeded (Three tries exhausted)',
-      '90' => 'Acquirer server temporarily unavailable',
-      '94' => 'Duplicate transaction. (transaction reference already reserved)',
-      '97' => 'Request time-out; transaction refused',
-      '99' => 'Payment page temporarily unavailable',
-    );
-
-    $component = $params['md'];
-    // Check for the resposne status codes and pass the validation accordingly.
-    if(!in_array($params['responseCode'], array('00', '60')))   {
-      $url = ($component == 'event') ? 'civicrm/event/register' : 'civicrm/contribute/transact';
-      $cancel = ($component == 'event') ? '_qf_Register_display' : '_qf_Main_display';
-      $cancelUrlString = "$cancel=1&cancel=1&qfKey={$params['qfKey']}";
-      $cancelURL = CRM_Utils_System::url(
-        $url,
-        $cancelUrlString,
-        TRUE, NULL, FALSE
-      );
-      CRM_Core_Session::setStatus($responses[$params['responseCode']], ts('Sorry an Error Occured'), 'error');
-
-      // If user has cancelled, mark participant status as cancelled.
-      $pid = CRM_Core_DAO::getFieldValue('CRM_Event_BAO_ParticipantPayment', self::trimAmount($params['transactionReference']), 'participant_id', 'contribution_id');
-      $status = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_Participant', $pid, 'status_id');
-      $participantStatuses = CRM_Core_PseudoConstant::get('CRM_Event_DAO_Participant', 'status_id', array(
-          'labelColumn' => 'name',
-          'flip' => 1,
-        ));
-      $participant_status_id = $participantStatuses['Cancelled'];
-      CRM_Event_BAO_Participant::updateParticipantStatus($pid, $status, $participant_status_id, TRUE);
-
-      CRM_Utils_System::redirect($cancelURL);
-    } else {
-      // Get the status ID for comleted and pending
-      if($params['responseCode'] == '00') {
-        $status = 'Completed';
-      } elseif ($params['responseCode'] == '60') {
-        $status = 'Pending';
-      }
-      $status_id = CRM_Core_OptionGroup::getValue('contribution_status', $status, 'name');
-      return $status_id;
-    }
+  /**
+   * Returns a hashed value of data.
+   *
+   * This is used to generate a seal for all requests to ATOS payment servers.
+   *
+   * @param string $data
+   *   Data to convert.
+   * @param array $secret_key
+   *   The secret key of atos worldine account.
+   *
+   * @return string
+   *   return the hashed value.
+   */
+  static function worldline_atos_generate_data_seal($data, $secret_key) {
+    $data_string = $data . $secret_key;
+    return hash('sha256', trim($data_string));
   }
 
   static function formatAmount($amount, $size, $pad = 0){
@@ -238,89 +209,13 @@ class osseed_payment_worldline extends CRM_Core_Payment {
   }
 
   /**
-   * Returns a hashed value of data.
-   *
-   * This is used to generate a seal for all requests to ATOS payment servers.
-   *
-   * @param string $data
-   *   Data to convert.
-   * @param array $secret_key
-   *   The secret key of atos wordline account.
-   *
-   * @return string
-   *   return the hashed value.
+   * Process incoming notification.
    */
-  static function worldline_atos_generate_data_seal($data, $secret_key) {
-    $data_string = $data . $secret_key;
-    return hash('sha256', trim($data_string));
+  static public function handlePaymentNotification() {
+    // Change this to fit your processor name.
+    require_once 'worldlineIPN.php';
+    // Change this to match your payment processor class.
+    com_osseed_payment_worldline_worldlineIPN::main();
   }
 
-  /**
-   * Converts an encoded response string into an array of data.
-   *
-   * @param string $data
-   *   A string to decode and to convert into an array.
-   *
-   * @return array|bool
-   *   Return FALSE if the response data wasn't valid.
-   */
-  static function worldline_atos_parse_response($data) {
-    if (empty($data)) {
-      return FALSE;
-    }
-    // Decode encoded data (base64URL)
-    $data = base64_decode(strtr($data, '-_,', '+/='));
-    $data = explode('|', $data);
-    foreach ($data as $value) {
-      list($key, $param) = explode('=', $value);
-      $response[$key] = (string) $param;
-    }
-
-    return $response;
-  }
-
-  /**
-  * Implement a handlePaymentNotification.
-  */
-  public function handlePaymentNotification() {
-    $module = $_GET['md'];
-    $qfKey = $_GET['qfKey'];
-    $response = array();
-    $response = self::worldline_atos_parse_response($_POST['Data']);
-    $response = array_merge($_GET, $response);
-    $transaction_id = $response['transactionReference'];
-    if($this->isValidResponse($response)) {
-      $status_id = $this->isValidResponse($response);
-      switch ($module) {
-        case 'contribute':
-          if ($transaction_id) {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" .$transaction_id . "', contribution_status_id='" . $status_id ."' where id='" . self::trimAmount($response['transactionReference']) . "'";
-            CRM_Core_DAO::executeQuery($query);
-          }
-          $finalURL = CRM_Utils_System::url('civicrm/contribute/transact', "_qf_ThankYou_display=1&qfKey={$qfKey}", TRUE, NULL, FALSE);
-          break;
-        case 'event':
-          if ($transaction_id) {
-            $query = "UPDATE civicrm_contribution SET trxn_id='" . $transaction_id . "', contribution_status_id='" . $status_id ."' where id='" . self::trimAmount($response['transactionReference']) . "'";
-            CRM_Core_DAO::executeQuery($query);
-            // Mark Participant as registered
-            $pid = CRM_Core_DAO::getFieldValue('CRM_Event_BAO_ParticipantPayment', self::trimAmount($response['transactionReference']), 'participant_id', 'contribution_id');
-            $status = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_Participant', $pid, 'status_id');
-            $participantStatuses = CRM_Core_PseudoConstant::get('CRM_Event_DAO_Participant', 'status_id', array(
-                'labelColumn' => 'name',
-                'flip' => 1,
-              ));
-            $participant_status_id = $participantStatuses['Registered'];
-            CRM_Event_BAO_Participant::updateParticipantStatus($pid, $status, $participant_status_id, TRUE);
-          }
-          $finalURL = CRM_Utils_System::url('civicrm/event/register', "_qf_ThankYou_display=1&qfKey={$qfKey}",
-          TRUE, NULL, FALSE);
-          break;
-        default:
-          require_once 'CRM/Core/Error.php';
-          CRM_Core_Error::debug_log_message("Could not get module name from request url");
-      }
-      CRM_Utils_System::redirect($finalURL);
-    }
-  }
 }
