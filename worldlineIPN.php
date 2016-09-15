@@ -293,7 +293,7 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
       $result['responseCode'] = $params['responseCode'];
       $result['responseMessage'] = $responses[$result['responseCode']];
       // Check for the resposne status codes and pass the validation accordingly.
-      if($params['responseCode'] == '00')) {
+      if($params['responseCode'] == '00') {
         $result['success'] = TRUE;
       } else {
         $result['success'] = FALSE;
