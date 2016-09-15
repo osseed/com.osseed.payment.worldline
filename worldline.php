@@ -42,13 +42,13 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
    * @static
    *
    */
-  // static function &singleton( $mode, &$paymentProcessor ) {
-  //     $processorName = $paymentProcessor['name'];
-  //     if (self::$_singleton[$processorName] === null ) {
-  //         self::$_singleton[$processorName] = new com_osseed_payment_worldline( $mode, $paymentProcessor );
-  //     }
-  //     return self::$_singleton[$processorName];
-  // }
+   static function &singleton( $mode, &$paymentProcessor ) {
+       $processorName = $paymentProcessor['name'];
+       if (self::$_singleton[$processorName] === null ) {
+           self::$_singleton[$processorName] = new com_osseed_payment_worldline( $mode, $paymentProcessor );
+       }
+       return self::$_singleton[$processorName];
+   }
  
   /**
    * This function checks to see if we have the right config values
@@ -119,7 +119,8 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
     );
     $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
     //Build the atos payment parameters.
-    $transactionReference = $params["eventID"] .'-' . $params["contributionID"] .'-' . $params["participantID"] .'-' . $params["contributionTypeID"] .'-' . $params["membershipID"];
+    $transactionOrigin = $params["eventID"] .'-' . $params["contributionID"] .'-' . $params["participantID"] .'-' . $params["contributionTypeID"] .'-' . $params["membershipID"];
+    $trsansaction_refernence = 
     $atos_data_params = array(
       'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
@@ -129,11 +130,10 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
       'customerIpAddress' => ip_address(),
       'customerLanguage' => 'en',
       'orderId' => $params['invoiceID'],
-      'transactionOrigin' => 'CIVICRMPAYMENT',
       'captureDay' => 0,
       'captureMode' => 'AUTHOR_CAPTURE',
-      'transactionReference' => self::formatAmount($params["contributionID"], 12),
-      'transactionOrigin' => $transactionReference,
+      'transactionReference' => mt_rand(100000, 999999) . $params["participantID"],
+      'transactionOrigin' => $transactionOrigin,
       'amount' => $params['amount'] * 100,
       'currencyCode' => $currency_code[$params['currencyID']],
     );
