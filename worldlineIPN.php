@@ -307,6 +307,7 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
     static function main() {
       $config = CRM_Core_Config::singleton();
       $module = $_GET['md'];
+      $participantID = $_GET['pid'];
       $qfKey = $_GET['qfKey'];
       $response = array();
       $response = self::worldline_atos_parse_response($_POST['Data']);
@@ -316,15 +317,18 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
       $amount_charged = $response['amount'] / 100;
       $result = self::isValidResponse($response);
       $privateData = array();
-      $transactionOrigin = explode('-', $response['transactionOrigin']);
+      $transactionOrigin = array();
+      if(!empty($response['transactionOrigin'])) {
+        $transactionOrigin = explode('-', $response['transactionOrigin']);
+      }
       $privateData['invoiceID'] = $response['orderId'];
       $privateData['qfKey'] = $qfKey;
       $privateData['contactID'] = $response['customerId'];
       $privateData['eventID'] = (isset($transactionOrigin[0])) ? $transactionOrigin[0] : '';
       $privateData['contributionID'] = (isset($transactionOrigin[1])) ? $transactionOrigin[1] : '';
-      $privateData['participantID'] = (isset($transactionOrigin[2])) ? $transactionOrigin[2] : '';
-      $privateData['contributionTypeID'] = (isset($transactionOrigin[3])) ? $transactionOrigin[3] : '';
-      $privateData['membershipID'] = (isset($transactionOrigin[4])) ? $transactionOrigin[4] : '';
+      $privateData['contributionTypeID'] = (isset($transactionOrigin[2])) ? $transactionOrigin[2] : '';
+      $privateData['membershipID'] = (isset($transactionOrigin[3])) ? $transactionOrigin[3] : '';
+      $privateData['participantID'] = $participantID;
       if($result['success']) {
         $success = TRUE;
         list($mode, $component, $paymentProcessorID, $duplicateTransaction) = self::getContext($privateData);
@@ -351,8 +355,7 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
         CRM_Core_Session::setStatus($result['responseCode'], $result['responseMessage'], 'error');
         if ($module == "event") {
           // Mark the participant status as rejected.
-          $participantId = $privateData['participantID'];
-          $status = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_Participant', $participantId, 'status_id');
+          $status = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_Participant', $participantID, 'status_id');
           $participantStatuses = CRM_Core_PseudoConstant::get('CRM_Event_DAO_Participant', 'status_id', array(
             'labelColumn' => 'name',
             'flip' => 1,
@@ -360,10 +363,10 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
           if(isset($participantStatuses['Rejected'])) {
             $participant_rejected_status_id = $participantStatuses['Rejected'];
           } 
-          elseif (isset($participantStatuses[' Cancelled'])) {
+          elseif (isset($participantStatuses['Cancelled'])) {
             $participant_rejected_status_id = $participantStatuses['Cancelled'];
           }
-          CRM_Event_BAO_Participant::updateParticipantStatus($participantId, $status, $participant_rejected_status_id, TRUE);
+          CRM_Event_BAO_Participant::updateParticipantStatus($participantID, $status, $participant_rejected_status_id, TRUE);
           
           $finalURL = CRM_Utils_System::url('civicrm/event/register',
           "_qf_Register_display&cancel=1&qfKey={$qfKey}", false, null, false);

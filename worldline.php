@@ -42,7 +42,7 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
    * @static
    *
    */
-   static function &singleton( $mode, &$paymentProcessor ) {
+   static function &singleton( $mode = 'test', &$paymentProcessor, &$paymentForm = NULL, $force = FALSE ) {
        $processorName = $paymentProcessor['name'];
        if (self::$_singleton[$processorName] === null ) {
            self::$_singleton[$processorName] = new com_osseed_payment_worldline( $mode, $paymentProcessor );
@@ -117,9 +117,10 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
       'KRW' => '410',
       'SGD' => '702',
     );
-    $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"];
+    $params["membershipID"] = !empty($params["membershipID"])?$params["membershipID"]:'';
+    $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"] . '&pid=' . $params["participantID"];
     //Build the atos payment parameters.
-    $transactionOrigin = $params["eventID"] .'-' . $params["contributionID"] .'-' . $params["participantID"] .'-' . $params["contributionTypeID"] .'-' . $params["membershipID"];
+    $transactionOrigin = $params["eventID"] .'-' . $params["contributionID"] . '-' . $params["contributionTypeID"] .'-' . $params["membershipID"];
     $trsansaction_refernence = 
     $atos_data_params = array(
       'merchantId' => $this->_paymentProcessor['user_name'],
