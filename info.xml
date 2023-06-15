@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" ?>
- <extension key="com.osseed.payment.worldline" type="payment">
+<?xml version="1.0" encoding="UTF-8"?>
+<extension key="com.osseed.payment.worldline" type="module">
   <file>worldline</file>
-  <name>worldline</name>
+  <name>Worldline Payment Processor</name>
   <description>Payment processor for worldline payment.</description>
   <urls>
     <url desc="Main Extension Page">http://osseed.com/</url>
@@ -16,14 +16,21 @@
   </maintainer>
   <releaseDate>2015-05-25</releaseDate>
   <version>1.0</version>
-   <compatibility><ver>4.6</ver></compatibility>
+  <compatibility>
+    <ver>4.6</ver>
+    <ver>5.3</ver>
+  </compatibility>
   <typeInfo>
-   <userNameLabel>Merchant ID</userNameLabel>
-   <signatureLabel>Secret Key</signatureLabel>
-   <urlSiteDefault>https://payment-webinit.sips-atos.com/paymentInit</urlSiteDefault>
-   <urlSiteTestDefault>https://payment-webinit.simu.sips-atos.com/paymentInit</urlSiteTestDefault>
-   <billingMode>notify</billingMode>
-   <paymentType>1</paymentType>
-   <isRecur>0</isRecur>
+    <userNameLabel>Merchant ID</userNameLabel>
+    <signatureLabel>Secret Key</signatureLabel>
+    <urlSiteDefault>https://payment-webinit.sips-atos.com/paymentInit</urlSiteDefault>
+    <urlSiteTestDefault>https://payment-webinit.simu.sips-atos.com/paymentInit</urlSiteTestDefault>
+    <billingMode>notify</billingMode>
+    <paymentType>1</paymentType>
+    <isRecur>0</isRecur>
   </typeInfo>
+  <civix>
+    <namespace>CRM/WorldlinePayment</namespace>
+    <format>22.05.2</format>
+  </civix>
 </extension>

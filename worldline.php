@@ -1,7 +1,7 @@
 <?php
- 
+
 require_once 'CRM/Core/Payment.php';
- 
+
 class com_osseed_payment_worldline extends CRM_Core_Payment {
   /**
    * We only need one instance of this object. So we use the singleton
@@ -11,7 +11,7 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
    * @static
    */
   static private $_singleton;
- 
+
   /**
    * mode of operation: live or test
    *
@@ -19,7 +19,7 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
    * @static
    */
   //static protected $_mode;
- 
+
   /**
    * Constructor
    *
@@ -32,7 +32,7 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
     $this->_paymentProcessor = $paymentProcessor;
     $this->_processorName    = ts('worldline Payment');
   }
- 
+
   /**
    * singleton function used to manage this object
    *
@@ -42,14 +42,14 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
    * @static
    *
    */
-   static function &singleton( $mode = 'test', &$paymentProcessor, &$paymentForm = NULL, $force = FALSE ) {
+   static function &singleton( &$paymentProcessor, $mode = 'test', &$paymentForm = NULL, $force = FALSE ) {
        $processorName = $paymentProcessor['name'];
        if (self::$_singleton[$processorName] === null ) {
            self::$_singleton[$processorName] = new com_osseed_payment_worldline( $mode, $paymentProcessor );
        }
        return self::$_singleton[$processorName];
    }
- 
+
   /**
    * This function checks to see if we have the right config values
    *
@@ -58,13 +58,13 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
    */
   function checkConfig( ) {
     $config = CRM_Core_Config::singleton();
- 
+
     $error = array();
- 
+
     if (empty($this->_paymentProcessor['user_name'])) {
       $error[] = ts('The "Merchant ID" is not set in the Administer CiviCRM Payment Processor.');
     }
- 
+
     if (!empty($error)) {
       return implode('<p>', $error);
     }
@@ -72,11 +72,11 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
       return NULL;
     }
   }
- 
+
   function doDirectPayment(&$params) {
     CRM_Core_Error::fatal(ts('This function is not implemented'));
   }
- 
+
   /**
    * Sets appropriate parameters for checking out to worldline Payment
    *
@@ -86,7 +86,7 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
    * @access public
    *
    */
-  function doTransferCheckout( &$params, $component ) {
+  function doTransferCheckout( &$params, $component = 'contribute' ) {
     // Build our query string;
     $query_string = '';
 
@@ -121,7 +121,7 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
     $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"] . '&pid=' . $params["participantID"];
     //Build the atos payment parameters.
     $transactionOrigin = $params["eventID"] .'-' . $params["contributionID"] . '-' . $params["contributionTypeID"] .'-' . $params["membershipID"];
-    $trsansaction_refernence = 
+    $trsansaction_refernence =
     $atos_data_params = array(
       'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
@@ -220,3 +220,21 @@ class com_osseed_payment_worldline extends CRM_Core_Payment {
   }
 
 }
+
+// /**
+//  * Implements hook_civicrm_postInstall().
+//  *
+//  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_postInstall
+//  */
+// function worldline_civicrm_postInstall() {
+//   _worldline_civix_civicrm_postInstall();
+// }
+
+// /**
+//  * Implements hook_civicrm_entityTypes().
+//  *
+//  * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_entityTypes
+//  */
+// function worldline_civicrm_entityTypes(&$entityTypes) {
+//   _worldline_civix_civicrm_entityTypes($entityTypes);
+// }
