@@ -12,7 +12,7 @@
 
 require_once 'CRM/Core/Payment/BaseIPN.php';
 
-class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN {
+class CRM_Core_Payment_Worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN {
   /**
      * We only need one instance of this object. So we use the singleton
      * pattern and cache the instance in this variable
@@ -21,7 +21,7 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
      * @static
      */
     static private $_singleton;
- 
+
     /**
      * mode of operation: live or test
      *
@@ -29,7 +29,7 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
      * @static
      */
     //static protected $_mode;
- 
+
     static function retrieve( $name, $type, $object, $abort = true ) {
       $value = CRM_Utils_Array::value($name, $object);
       if ($abort && $value === null) {
@@ -37,7 +37,7 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
         echo "Failure: Missing Parameter<p>";
         exit();
       }
- 
+
       if ($value) {
         if (!CRM_Utils_Type::validate($value, $type)) {
           CRM_Core_Error::debug_log_message("Could not find a valid entry for $name");
@@ -45,11 +45,11 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
           exit();
         }
       }
- 
+
       return $value;
     }
- 
- 
+
+
     /**
      * Constructor
      *
@@ -59,11 +59,11 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
      */
     function __construct($mode, &$paymentProcessor) {
       parent::__construct();
- 
+
       $this->_mode = $mode;
       $this->_paymentProcessor = $paymentProcessor;
     }
- 
+
     /**
      * The function gets called when a new order takes place.
      *
@@ -75,12 +75,12 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
      */
     function newOrderNotify( $success, $privateData, $component, $amount, $transactionReference ) {
         $ids = $input = $params = array( );
- 
+
         $input['component'] = strtolower($component);
- 
+
         $ids['contact']          = self::retrieve( 'contactID'     , 'Integer', $privateData, true );
         $ids['contribution']     = self::retrieve( 'contributionID', 'Integer', $privateData, true );
- 
+
         if ( $input['component'] == "event" ) {
             $ids['event']       = self::retrieve( 'eventID'      , 'Integer', $privateData, true );
             $ids['participant'] = self::retrieve( 'participantID', 'Integer', $privateData, true );
@@ -89,41 +89,41 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
             $ids['membership'] = self::retrieve( 'membershipID'  , 'Integer', $privateData, false );
         }
         $ids['contributionRecur'] = $ids['contributionPage'] = null;
- 
+
         if ( ! $this->validateData( $input, $ids, $objects ) ) {
             return false;
         }
- 
+
         // make sure the invoice is valid and matches what we have in the contribution record
         $input['invoice']    =  $privateData['invoiceID'];
         $input['newInvoice'] =  $transactionReference;
         $contribution        =& $objects['contribution'];
         $input['trxn_id']  =    $transactionReference;
- 
+
         if ( $contribution->invoice_id != $input['invoice'] ) {
             CRM_Core_Error::debug_log_message( "Invoice values dont match between database and IPN request" );
             echo "Failure: Invoice values dont match between database and IPN request<p>";
             return;
         }
- 
+
         // lets replace invoice-id with Payment Processor -number because thats what is common and unique
         // in subsequent calls or notifications sent by google.
         $contribution->invoice_id = $input['newInvoice'];
- 
+
         $input['amount'] = $amount;
- 
+
         if ( $contribution->total_amount != $input['amount'] ) {
             CRM_Core_Error::debug_log_message( "Amount values dont match between database and IPN request" );
             echo "Failure: Amount values dont match between database and IPN request."
                         .$contribution->total_amount."/".$input['amount']."<p>";
             return;
         }
- 
+
         require_once 'CRM/Core/Transaction.php';
         $transaction = new CRM_Core_Transaction( );
- 
+
         // check if contribution is already completed, if so we ignore this ipn
- 
+
         if ( $contribution->contribution_status_id == 1 ) {
             CRM_Core_Error::debug_log_message( "returning since contribution has already been handled" );
             echo "Success: Contribution has already been handled<p>";
@@ -143,8 +143,8 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
         $this->completeTransaction ( $input, $ids, $objects, $transaction);
         return true;
     }
- 
- 
+
+
     /**
      * singleton function used to manage this object
      *
@@ -155,11 +155,11 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
      */
     static function &singleton( $mode, $component, &$paymentProcessor ) {
         if ( self::$_singleton === null ) {
-            self::$_singleton = new com_osseed_payment_worldline_worldlineIPN( $mode, $paymentProcessor );
+            self::$_singleton = new CRM_Core_Payment_Worldline_worldlineIPN( $mode, $paymentProcessor );
         }
         return self::$_singleton;
     }
- 
+
     /**
      * The function returns the component(Event/Contribute..)and whether it is Test or not
      *
@@ -170,20 +170,20 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
      */
     static function getContext($privateData)    {
       require_once 'CRM/Contribute/DAO/Contribution.php';
- 
+
       $component = null;
       $isTest = null;
- 
+
       $contributionID = $privateData['contributionID'];
       $contribution = new CRM_Contribute_DAO_Contribution();
       $contribution->id = $contributionID;
- 
+
       if (!$contribution->find(true)) {
         CRM_Core_Error::debug_log_message("Could not find contribution record: $contributionID");
         echo "Failure: Could not find contribution record for $contributionID<p>";
         exit();
       }
- 
+
       if (stristr($contribution->source, 'Online Contribution')) {
         $component = 'contribute';
       }
@@ -191,33 +191,33 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
         $component = 'event';
       }
       $isTest = $contribution->is_test;
- 
+
       $duplicateTransaction = 0;
       if ($contribution->contribution_status_id == 1) {
         //contribution already handled. (some processors do two notifications so this could be valid)
         $duplicateTransaction = 1;
       }
- 
+
       if ($component == 'contribute') {
         if (!$contribution->contribution_page_id) {
           CRM_Core_Error::debug_log_message("Could not find contribution page for contribution record: $contributionID");
           echo "Failure: Could not find contribution page for contribution record: $contributionID<p>";
           exit();
         }
- 
+
         // get the payment processor id from contribution page
-        $paymentProcessorID = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_ContributionPage', 
+        $paymentProcessorID = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_ContributionPage',
         $contribution->contribution_page, 'payment_processor');
       }
       else {
         $eventID = $privateData['eventID'];
- 
+
         if (!$eventID) {
           CRM_Core_Error::debug_log_message("Could not find event ID");
           echo "Failure: Could not find eventID<p>";
           exit();
         }
- 
+
         // we are in event mode
         // make sure event exists and is valid
         require_once 'CRM/Event/DAO/Event.php';
@@ -228,20 +228,20 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
           echo "Failure: Could not find event: $eventID<p>";
           exit();
         }
- 
+
         // get the payment processor id from contribution page
         $paymentProcessorID = $event->payment_processor;
       }
- 
+
       if (!$paymentProcessorID) {
         CRM_Core_Error::debug_log_message("Could not find payment processor for contribution record: $contributionID");
         echo "Failure: Could not find payment processor for contribution record: $contributionID<p>";
         exit();
       }
- 
+
       return array($isTest, $component, $paymentProcessorID, $duplicateTransaction);
     }
- 
+
     /**
      * Converts an encoded response string into an array of data.
      *
@@ -265,7 +265,7 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
 
       return $response;
     }
-    
+
     static function isValidResponse($params) {
       $responses = array(
         '00' => 'Transaction success, authorization accepted.',
@@ -338,17 +338,17 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
         $ipn=& self::singleton( $mode, $component, $paymentProcessor );
         if ($duplicateTransaction == 0) {
           // Process the transaction.
-           $ipn->newOrderNotify($success, $privateData, $component, 
+           $ipn->newOrderNotify($success, $privateData, $component,
            $amount_charged, $transaction_id);
         }
 
         // Redirect our users to the correct url.
         if ($module == "event") {
-          $finalURL = CRM_Utils_System::url('civicrm/event/register', 
+          $finalURL = CRM_Utils_System::url('civicrm/event/register',
               "_qf_ThankYou_display=1&qfKey={$qfKey}", false, null, false);
         }
         elseif ($module == "contribute") {
-          $finalURL = CRM_Utils_System::url('civicrm/contribute/transact', 
+          $finalURL = CRM_Utils_System::url('civicrm/contribute/transact',
               "_qf_ThankYou_display=1&qfKey={$qfKey}", false, null, false);
         }
       } else {
@@ -362,21 +362,21 @@ class com_osseed_payment_worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN
           ));
           if(isset($participantStatuses['Rejected'])) {
             $participant_rejected_status_id = $participantStatuses['Rejected'];
-          } 
+          }
           elseif (isset($participantStatuses['Cancelled'])) {
             $participant_rejected_status_id = $participantStatuses['Cancelled'];
           }
           CRM_Event_BAO_Participant::updateParticipantStatus($participantID, $status, $participant_rejected_status_id, TRUE);
-          
+
           $finalURL = CRM_Utils_System::url('civicrm/event/register',
           "_qf_Register_display&cancel=1&qfKey={$qfKey}", false, null, false);
         } elseif ( $module == "contribute" ) {
-          $finalURL = CRM_Utils_System::url('civicrm/contribute/transact', 
+          $finalURL = CRM_Utils_System::url('civicrm/contribute/transact',
           "_qf_Main_display=1&cancel=1&qfKey={$qfKey}", false, null, false);
         }
       }
 
       CRM_Utils_System::redirect($finalURL);
     }
- 
+
 }

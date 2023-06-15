@@ -6,10 +6,10 @@
  * The ExtensionUtil class provides small stubs for accessing resources of this
  * extension.
  */
-class CRM_WorldlinePayment_ExtensionUtil {
+class CRM_Worldline_ExtensionUtil {
   const SHORT_NAME = 'worldline';
   const LONG_NAME = 'com.osseed.payment.worldline';
-  const CLASS_PREFIX = 'CRM_WorldlinePayment';
+  const CLASS_PREFIX = 'CRM_Worldline';
 
   /**
    * Translate a string using the extension's domain.
@@ -77,7 +77,7 @@ class CRM_WorldlinePayment_ExtensionUtil {
 
 }
 
-use CRM_WorldlinePayment_ExtensionUtil as E;
+use CRM_Worldline_ExtensionUtil as E;
 
 function _worldline_civix_mixin_polyfill() {
   if (!class_exists('CRM_Extension_MixInfo')) {
@@ -203,14 +203,14 @@ function _worldline_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * @return CRM_WorldlinePayment_Upgrader
+ * @return CRM_Worldline_Upgrader
  */
 function _worldline_civix_upgrader() {
-  if (!file_exists(__DIR__ . '/CRM/WorldlinePayment/Upgrader.php')) {
+  if (!file_exists(__DIR__ . '/CRM/Worldline/Upgrader.php')) {
     return NULL;
   }
   else {
-    return CRM_WorldlinePayment_Upgrader_Base::instance();
+    return CRM_Worldline_Upgrader_Base::instance();
   }
 }
 
