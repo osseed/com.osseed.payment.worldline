@@ -74,7 +74,7 @@ class CRM_Core_Payment_Worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN {
      *
      */
     function newOrderNotify( $success, $privateData, $component, $amount, $transactionReference ) {
-        $ids = $input = $params = array( );
+        $ids = $input = $params = [];
 
         $input['component'] = strtolower($component);
 
@@ -239,7 +239,7 @@ class CRM_Core_Payment_Worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN {
         exit();
       }
 
-      return array($isTest, $component, $paymentProcessorID, $duplicateTransaction);
+      return [$isTest, $component, $paymentProcessorID, $duplicateTransaction];
     }
 
     /**
@@ -267,7 +267,7 @@ class CRM_Core_Payment_Worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN {
     }
 
     static function isValidResponse($params) {
-      $responses = array(
+      $responses = [
         '00' => 'Transaction success, authorization accepted.',
         '02' => 'Please phone the bank because the authorization limit on the card has been exceeded',
         '03' => 'Invalid merchant contract',
@@ -287,9 +287,9 @@ class CRM_Core_Payment_Worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN {
         '94' => 'Duplicate transaction. (transaction reference already reserved)',
         '97' => 'Request time-out; transaction refused',
         '99' => 'Payment page temporarily unavailable',
-      );
+      ];
 
-      $result = array();
+      $result = [];
       $result['responseCode'] = $params['responseCode'];
       $result['responseMessage'] = $responses[$result['responseCode']];
       // Check for the resposne status codes and pass the validation accordingly.
@@ -309,15 +309,15 @@ class CRM_Core_Payment_Worldline_worldlineIPN extends CRM_Core_Payment_BaseIPN {
       $module = $_GET['md'];
       $participantID = $_GET['pid'];
       $qfKey = $_GET['qfKey'];
-      $response = array();
+      $response = [];
       $response = self::worldline_atos_parse_response($_POST['Data']);
       $response = array_merge($_GET, $response);
       $mode = $_GET['mode'];
       $transaction_id = $response['transactionReference'];
       $amount_charged = $response['amount'] / 100;
       $result = self::isValidResponse($response);
-      $privateData = array();
-      $transactionOrigin = array();
+      $privateData = [];
+      $transactionOrigin = [];
       if(!empty($response['transactionOrigin'])) {
         $transactionOrigin = explode('-', $response['transactionOrigin']);
       }
