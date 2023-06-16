@@ -59,7 +59,7 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
   function checkConfig( ) {
     $config = CRM_Core_Config::singleton();
 
-    $error = array();
+    $error = [];
 
     if (empty($this->_paymentProcessor['user_name'])) {
       $error[] = ts('The "Merchant ID" is not set in the Administer CiviCRM Payment Processor.');
@@ -96,7 +96,7 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
       CRM_Core_Error::fatal(ts('Component is invalid'));
     }
 
-    $currency_code = array(
+    $currency_code = [
       'EUR' => '978',
       'USD' => '840',
       'CHF' => '756',
@@ -116,13 +116,13 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
       'DKK' => '208',
       'KRW' => '410',
       'SGD' => '702',
-    );
+    ];
     $params["membershipID"] = !empty($params["membershipID"])?$params["membershipID"]:'';
     $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"] . '&pid=' . $params["participantID"];
     //Build the atos payment parameters.
     $transactionOrigin = $params["eventID"] .'-' . $params["contributionID"] . '-' . $params["contributionTypeID"] .'-' . $params["membershipID"];
     $trsansaction_refernence =
-    $atos_data_params = array(
+    $atos_data_params = [
       'merchantId' => $this->_paymentProcessor['user_name'],
       'keyVersion' => 1,
       'normalReturnUrl' => $response_url,
@@ -137,8 +137,8 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
       'transactionOrigin' => $transactionOrigin,
       'amount' => $params['amount'] * 100,
       'currencyCode' => $currency_code[$params['currencyID']],
-    );
-    $attached_data = array();
+    ];
+    $attached_data = [];
     // Allow further manipulation of the arguments via custom hooks ..
     CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $worldline_payment_params);
 
@@ -148,19 +148,19 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
     }
     $atos_params_string = implode('|', $attached_data);
     $atos_params_string_data = base64_encode($atos_params_string);
-    $atosParams = array(
+    $atosParams = [
       'Data' => $atos_params_string_data,
       'Seal' => self::worldline_atos_generate_data_seal($atos_params_string_data, $this->_paymentProcessor['signature']),
       'Encode' => 'base64',
       'InterfaceVersion' => 'HP_2.3',
-    );
+    ];
 
     // Do a post request with required params
     require_once 'HTTP/Request.php';
-    $post_params = array(
+    $post_params = [
       'method' => HTTP_REQUEST_METHOD_POST,
       'allowRedirects' => TRUE,
-    );
+    ];
     $payment_site_url = $this->_paymentProcessor['url_site'];
     $request = new HTTP_Request($payment_site_url, $post_params);
     foreach ($atosParams as $key => $value) {
@@ -174,7 +174,7 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
 
     if ($request->getResponseCode() != 200) {
       CRM_Core_Error::fatal(ts('Invalid response code received from Worldline Checkout: %1',
-          array(1 => $request->getResponseCode())
+          [1 => $request->getResponseCode()]
         ));
     }
     echo $request->getResponseBody();
