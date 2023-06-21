@@ -1,0 +1,11 @@
+{
+    "name": "root/com.osseed.payment.worldline",
+    "require": {
+        "wl-online-payments-direct/sdk-php": "^5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Root\\ComOsseedPaymentWorldline\\": "src/"
+        }
+    }
+}

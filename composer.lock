@@ -1,0 +1,68 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "f8ac20cb2455fee226d3496721d263b2",
+    "packages": [
+        {
+            "name": "wl-online-payments-direct/sdk-php",
+            "version": "5.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/wl-online-payments-direct/sdk-php.git",
+                "reference": "b0982676eb30267f4150546a7cafe16f99f5475e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/wl-online-payments-direct/sdk-php/zipball/b0982676eb30267f4150546a7cafe16f99f5475e",
+                "reference": "b0982676eb30267f4150546a7cafe16f99f5475e",
+                "shasum": ""
+            },
+            "require": {
+                "php": "~7.4||~8.0||~8.1"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^1.9",
+                "phpunit/phpunit": "^9.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "OnlinePayments\\Sdk\\": [
+                        "src/OnlinePayments/Sdk",
+                        "lib/OnlinePayments/Sdk"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "OnlinePayments"
+                }
+            ],
+            "description": "PHP SDK to communicate with the payment platform server-to-server API",
+            "keywords": [
+                "sdk"
+            ],
+            "support": {
+                "issues": "https://github.com/wl-online-payments-direct/sdk-php/issues",
+                "source": "https://github.com/wl-online-payments-direct/sdk-php/tree/5.5.0"
+            },
+            "time": "2023-06-19T10:25:50+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "2.6.0"
+}
