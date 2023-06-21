@@ -48,8 +48,8 @@ return [
       // Note it is quite common these days to hard code the urls in the processors
       // as they are not necessarily seen as configuration. But, if you enter
       // something here it will be the default for data entry.
-      'url_site_default' => 'https://payment-webinit.sips-atos.com/paymentInit',
-      'url_api_default' => 'https://payment-webinit.simu.sips-atos.com/paymentInit',
+      'url_site_default' => 'https://payment.direct.worldline-solutions.com/v2/',
+      'url_api_default' => 'https://payment.direct.worldline-solutions.com/v2/',
       // this is a deprecated concept and these docs recommend you override
       // anything that references it. However, if you redirect the user offsite
       // enter 4 and if not enter 1 here.

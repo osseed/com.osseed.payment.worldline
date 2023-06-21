@@ -27,8 +27,8 @@
   <typeInfo>
     <userNameLabel>Merchant ID</userNameLabel>
     <signatureLabel>Secret Key</signatureLabel>
-    <urlSiteDefault>https://payment-webinit.sips-atos.com/paymentInit</urlSiteDefault>
-    <urlSiteTestDefault>https://payment-webinit.simu.sips-atos.com/paymentInit</urlSiteTestDefault>
+    <urlSiteDefault>https://payment.direct.worldline-solutions.com/v2/</urlSiteDefault>
+    <urlSiteTestDefault>https://payment.preprod.direct.worldline-solutions.com/v2/</urlSiteTestDefault>
     <billingMode>notify</billingMode>
     <paymentType>1</paymentType>
     <isRecur>0</isRecur>
