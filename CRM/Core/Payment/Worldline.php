@@ -7,6 +7,9 @@ use \OnlinePayments\Sdk\CommunicatorConfiguration;
 use \OnlinePayments\Sdk\Communicator;
 use \OnlinePayments\Sdk\Client;
 use \OnlinePayments\Sdk\ProxyConfiguration;
+use \OnlinePayments\Sdk\Domain\CreateHostedCheckoutRequest;
+use \OnlinePayments\Sdk\Domain\AmountOfMoney;
+use \OnlinePayments\Sdk\Domain\Order;
 
 class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
   /**
@@ -113,52 +116,8 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
       return $result;
     }
 
-    $currency_code = [
-      'EUR' => '978',
-      'USD' => '840',
-      'CHF' => '756',
-      'GBP' => '826',
-      'CAD' => '124',
-      'JPY' => '392',
-      'MXP' => '484',
-      'TRL' => '792',
-      'AUD' => '036',
-      'NZD' => '554',
-      'NOK' => '578',
-      'BRC' => '986',
-      'ARP' => '032',
-      'KHR' => '116',
-      'TWD' => '901',
-      'SEK' => '752',
-      'DKK' => '208',
-      'KRW' => '410',
-      'SGD' => '702',
-    ];
-
-    // $currency_code = [
-    //   'EUR' => '978',
-    //   'USD' => '840',
-    //   'CHF' => '756',
-    //   'GBP' => '826',
-    //   'CAD' => '124',
-    //   'JPY' => '392',
-    //   'MXP' => '484',
-    //   'TRL' => '792',
-    //   'AUD' => '036',
-    //   'NZD' => '554',
-    //   'NOK' => '578',
-    //   'BRC' => '986',
-    //   'ARP' => '032',
-    //   'KHR' => '116',
-    //   'TWD' => '901',
-    //   'SEK' => '752',
-    //   'DKK' => '208',
-    //   'KRW' => '410',
-    //   'SGD' => '702',
-    // ];
     $params["membershipID"] = !empty($params["membershipID"])?$params["membershipID"]:'';
     $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"] . '&pid=' . $params["participantID"];
-
 
     // Your PSPID in either our test or live environment
     $merchantId = $this->_paymentProcessor['user_name'];
@@ -204,6 +163,28 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
     $client = new Client($communicator);
 
     $merchantClient = $client->merchant($merchantId);
+
+    /*
+    * The HostedCheckoutClient object based on the MerchantClient
+    * object created during initialisation
+    */
+    $hostedCheckoutClient = $merchantClient->hostedCheckout();
+
+    $createHostedCheckoutRequest = new CreateHostedCheckoutRequest();
+    $order = new Order();
+
+    // Object of the AmountOfMoney
+    $amountOfMoney = new AmountOfMoney();
+    $amountOfMoney->setCurrencyCode($propertyBag->getCurrency());
+    $amountOfMoney->setAmount($propertyBag->getAmount());
+    $order->setAmountOfMoney($amountOfMoney);
+
+    $createHostedCheckoutRequest->setOrder($order);
+
+    // Get the response for the HostedCheckoutClient
+    $createHostedCheckoutResponse = $hostedCheckoutClient->createHostedCheckout(
+      $createHostedCheckoutRequest
+    );
 
     // Prepare whatever data the 3rd party processor requires to take a payment.
     // The contents of the array below are just examples of typical things that
