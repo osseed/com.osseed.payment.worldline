@@ -1,7 +1,12 @@
 <?php
 
 require __DIR__ . '/../../../vendor/autoload.php';
-require_once 'CRM/Core/Payment.php';
+
+use \OnlinePayments\Sdk\DefaultConnection;
+use \OnlinePayments\Sdk\CommunicatorConfiguration;
+use \OnlinePayments\Sdk\Communicator;
+use \OnlinePayments\Sdk\Client;
+use \OnlinePayments\Sdk\ProxyConfiguration;
 
 class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
   /**
@@ -14,24 +19,21 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
   static private $_singleton;
 
   /**
-   * mode of operation: live or test
-   *
-   * @var object
-   * @static
+   * Payment Processor Mode
+   *   either test or live
+   * @var string
    */
-  static protected $_mode;
+  protected $_mode;
 
   /**
-   * Constructor
+   * Constructor.
    *
    * @param string $mode the mode of operation: live or test
-   *
-   * @return void
+   * @param array $paymentProcessor
    */
-  function __construct( $mode, &$paymentProcessor ) {
-    $this->_mode             = $mode;
+  public function __construct(string $mode, array $paymentProcessor) {
+    $this->_mode = $mode;
     $this->_paymentProcessor = $paymentProcessor;
-    $this->_processorName    = ts('Worldline Payment');
   }
 
   /**
@@ -132,8 +134,76 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
       'KRW' => '410',
       'SGD' => '702',
     ];
+
+    // $currency_code = [
+    //   'EUR' => '978',
+    //   'USD' => '840',
+    //   'CHF' => '756',
+    //   'GBP' => '826',
+    //   'CAD' => '124',
+    //   'JPY' => '392',
+    //   'MXP' => '484',
+    //   'TRL' => '792',
+    //   'AUD' => '036',
+    //   'NZD' => '554',
+    //   'NOK' => '578',
+    //   'BRC' => '986',
+    //   'ARP' => '032',
+    //   'KHR' => '116',
+    //   'TWD' => '901',
+    //   'SEK' => '752',
+    //   'DKK' => '208',
+    //   'KRW' => '410',
+    //   'SGD' => '702',
+    // ];
     $params["membershipID"] = !empty($params["membershipID"])?$params["membershipID"]:'';
     $response_url = $config->userFrameworkBaseURL . 'civicrm/payment/ipn?processor_name=worldline&mode=' . $this->_mode . '&md=' . $component . '&qfKey=' . $params["qfKey"] . '&pid=' . $params["participantID"];
+
+
+    // Your PSPID in either our test or live environment
+    $merchantId = $this->_paymentProcessor['user_name'];
+
+    // Put the value of the API Key which you can find in the Merchant Portal
+    // https://secure.ogone.com/Ncol/Test/Backoffice/login/
+    $apiKey = $this->_paymentProcessor['user_name'];
+
+    // Put the value of the API Secret which you can find in the Merchant Portal
+    // https://secure.ogone.com/Ncol/Prod/BackOffice/login/
+    $apiSecret = $this->_paymentProcessor['signature'];
+
+    // This endpoint is pointing to the TEST server
+    // Note: Use the endpoint without the /v2/ part here
+    $apiEndpoint = $this->_paymentProcessor['url_site'] ;
+
+    $integrator = $config->userFrameworkBaseURL;
+
+    $proxyConfiguration = null;
+
+    // To use proxy, you should uncomment the section below
+    // and replace proper settings with your settings of the proxy.
+    // (additionally, you can comment on the previous setting).
+
+    // $proxyConfiguration = new ProxyConfiguration(
+    //    'proxyHost',
+    //    'proxyPort',
+    //    'proxyUserName',
+    //    'proxyPassword'
+    // );
+
+    $communicatorConfiguration = new CommunicatorConfiguration(
+        $apiKey,
+        $apiSecret,
+        $apiEndpoint,
+        $integrator,
+        $proxyConfiguration
+    );
+
+    $connection = new DefaultConnection();
+    $communicator = new Communicator($connection, $communicatorConfiguration);
+
+    $client = new Client($communicator);
+
+    $merchantClient = $client->merchant($merchantId);
 
     // Prepare whatever data the 3rd party processor requires to take a payment.
     // The contents of the array below are just examples of typical things that
@@ -171,7 +241,7 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
     // you should either throw an exception or return a result array, depending on
     // the outcome.
     if ($result['failed']) {
-      throw new (\Civi\Payment\Exception\PaymentProcessorException($failureMessage));
+      throw new \Civi\Payment\Exception\PaymentProcessorException($failureMessage);
     }
 
     // return [
@@ -327,11 +397,11 @@ class CRM_Core_Payment_Worldline extends CRM_Core_Payment {
   /**
    * Process incoming notification.
    */
-  static public function handlePaymentNotification() {
-    // Change this to fit your processor name.
-    require_once 'worldlineIPN.php';
-    // Change this to match your payment processor class.
-    CRM_Core_Payment_Worldline_worldlineIPN::main();
-  }
+  // static public function handlePaymentNotification() {
+  //   // Change this to fit your processor name.
+  //   require_once 'worldlineIPN.php';
+  //   // Change this to match your payment processor class.
+  //   CRM_Core_Payment_Worldline_worldlineIPN::main();
+  // }
 
 }
